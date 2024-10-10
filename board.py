@@ -13,6 +13,12 @@ class Board:
         self._add_pieces('white')
         self._add_pieces('black')
     
+    def undo_move(self, board, move):
+        initial = move.initial
+        final = move.final
+        init_piece = initial.piece
+        board.move(init_piece, final)
+
     def calc_moves(self, piece, row, col, bool = True):
         def pawn_moves():
             if piece.moved:
@@ -284,5 +290,41 @@ class Board:
         self.squares[row_other][3] = Square(row_other, 3, Queen(color))
         # king
         self.squares[row_other][4] = Square(row_other, 4, King(color))
+    
+    def get_possible_moves(self):
+        possible_moves = []
+        for row in range(ROWS):
+            for col in range(COLS):
+                if self.squares[row][col].isempty() == False:
+                    possible_moves.append(move for move in self.squares[row][col].piece.moves)
+        return possible_moves
+    
+    def check_King_all_board(self):
+        for row in range(ROWS):
+            for col in range(COLS):
+                if  not self.squares[row][col].isempty():
+                    cur_piece = self.squares[row][col].piece
+                    for move in cur_piece.moves:
+                        if self.check_King(cur_piece, move):
+                            return True
+        return False
 
-
+    def is_stalemate(self):
+        if self.check_King_all_board() == True:
+            return False
+        if self.get_possible_moves() == []:
+            return True
+    def is_endgame(self):
+        white_pieces = 0
+        black_pieces = 0
+        for row in range(ROWS):
+            for col in range(COLS):
+                piece = self.squares[row][col].piece
+                if piece.color == "white":
+                    white_pieces += 1
+                elif piece.color == "black":
+                    black_pieces += 1
+        if white_pieces <= 7 or black_pieces <= 7 or (white_pieces + black_pieces <= 14):
+            return white_pieces, black_pieces, True
+        else:
+            return white_pieces, black_pieces, False

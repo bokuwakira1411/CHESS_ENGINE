@@ -2,12 +2,13 @@ import pygame
 from const_val import *
 from board import Board
 from dragger import Dragger
-
+from chessAI import chessAI
 class Game:
     def __init__(self):
         self.next_player = 'white'
         self.board = Board()
         self.dragger = Dragger()
+        self.ai = chessAI(next_player="black")
 
     def show_bg(self, surface):
         for row in range(ROWS):
@@ -51,3 +52,14 @@ class Game:
 
     def next_turn(self):
         self.next_player = 'white' if self.next_player == 'black' else 'black'
+        if self.next_player == 'black':  # Check if it's AI's turn
+            self.AI_move()
+    def AI_move(self):
+        best_move = self.ai.find_best_move(self.board)
+
+        if best_move:
+            self.board.move(best_move.initial.piece, best_move)
+            self.show_bg(self.screen)  # Assuming you have a reference to the screen
+            self.show_last_move(self.screen)
+            self.show_pieces(self.screen)
+            self.next_turn()  # Switch turns after AI moves

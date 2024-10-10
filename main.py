@@ -70,6 +70,8 @@ class Main:
                             game.show_last_move(screen)
                             game.show_pieces(screen)
                             game.next_turn()
+                            
+    
                     dragger.undrag()
 
 
@@ -77,7 +79,15 @@ class Main:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-            
+            if game.next_player == "black": 
+                best_move = game.ai.find_best_move(board)  # Assuming you have an AI instance in game
+                if best_move:
+                    board.move(best_move.initial.piece, best_move)
+                    game.show_bg(screen)
+                    game.show_last_move(screen)
+                    game.show_pieces(screen)
+                    game.next_turn()
+
             pygame.display.update()
 
 main = Main()
