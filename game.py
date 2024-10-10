@@ -54,12 +54,15 @@ class Game:
         self.next_player = 'white' if self.next_player == 'black' else 'black'
         if self.next_player == 'black':  # Check if it's AI's turn
             self.AI_move()
+    
     def AI_move(self):
         best_move = self.ai.find_best_move(self.board)
 
         if best_move:
+            # Tô màu ô có thể di chuyển
+            color = (230, 230, 0)  # Màu cho nước đi của AI
+            rect = (best_move.final.col * SQSIZE, best_move.final.row * SQSIZE, SQSIZE, SQSIZE)
+            pygame.draw.rect(self.screen, color, rect)  # Tô màu ô nước đi
+
+            # Thực hiện nước đi
             self.board.move(best_move.initial.piece, best_move)
-            self.show_bg(self.screen)  # Assuming you have a reference to the screen
-            self.show_last_move(self.screen)
-            self.show_pieces(self.screen)
-            self.next_turn()  # Switch turns after AI moves

@@ -296,9 +296,8 @@ class Board:
         for row in range(ROWS):
             for col in range(COLS):
                 if self.squares[row][col].isempty() == False:
-                    possible_moves.append(move for move in self.squares[row][col].piece.moves)
+                    possible_moves.extend(self.squares[row][col].piece.moves)
         return possible_moves
-    
     def check_King_all_board(self):
         for row in range(ROWS):
             for col in range(COLS):
