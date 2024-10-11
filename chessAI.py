@@ -143,6 +143,14 @@ class chessAI:
                         break
             return best_move, min_eval
             
+<<<<<<< HEAD
+    def find_best_move(self, possible_moves, queue):
+        global next_move
+        next_move = None
+        random.suffle(possible_moves)
+        self.find_move_minimax_alpha_beta()
+        pass 
+=======
     def score_board(self, board):
         """Calculate the score of the board state."""
         piece_score = 0
@@ -176,6 +184,7 @@ class chessAI:
                 piece_score += 50
 
         return piece_score
+>>>>>>> 264edfd163c5b882b706efea516c5b4b909661db
 
     
     def find_best_move(self, board):
