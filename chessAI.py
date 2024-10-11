@@ -79,10 +79,11 @@ class chessAI:
         copy_board = copy.deepcopy(board)
         for move in possible_moves:
             piece = move.initial.piece
-            score = self.score_board(copy_board.move(piece,move))
-            sorted_moves.append((move, score))
-            copy_board.undo_move(piece, move)
-        sorted_moves.sort(key=lambda x: x[1], reverse= True)
+            if piece != None:
+                score = self.score_board(copy_board.move(piece,move))
+                sorted_moves.append((move, score))
+                copy_board.undo_move(piece, move)
+            sorted_moves.sort(key=lambda x: x[1], reverse= True)
         return [move for move, score in sorted_moves]
 
     def evaluate_position(self, board):
@@ -143,14 +144,6 @@ class chessAI:
                         break
             return best_move, min_eval
             
-<<<<<<< HEAD
-    def find_best_move(self, possible_moves, queue):
-        global next_move
-        next_move = None
-        random.suffle(possible_moves)
-        self.find_move_minimax_alpha_beta()
-        pass 
-=======
     def score_board(self, board):
         """Calculate the score of the board state."""
         piece_score = 0
@@ -184,9 +177,7 @@ class chessAI:
                 piece_score += 50
 
         return piece_score
->>>>>>> 264edfd163c5b882b706efea516c5b4b909661db
 
-    
     def find_best_move(self, board):
         """Find the best move using the minimax algorithm with alpha-beta pruning."""
         best_move, _ = self.find_move_minimax_alpha_beta(board, self.depth, -CHECKMATE, CHECKMATE, True)
