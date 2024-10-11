@@ -56,7 +56,6 @@ class chessAI:
         self.depth = 3
 
     def threatened_move(self, game_state, move):
-        # với mỗi nước đi, cho chạy thử nước đi đó trước - nếu có bất kì quân cờ nào của đối thủ có thể ăn được thì trả về True
         initial = move.initial
         init_piece = initial.piece
         final = move.final
@@ -67,15 +66,15 @@ class chessAI:
                         rival_piece = game_state.squares[row][col]
                         rival_moves = game_state.calc_moves(rival_piece, row, col)
                         if any(pos_move.final == final for pos_move in rival_moves):
-                                game_state.undo_move(initial.piece, move)  # Undo t
+                                game_state.undo_move(initial.piece, move)  
                                 return True
-        game_state.undo_move(init_piece, move)  # Undo the simulated move
+        game_state.undo_move(init_piece, move)  
         return False
 
     def order_moves(self, board):
         # Với mỗi tập nước đi có thể xảy ra, sắp xếp các nước đi lại - để mỗi lần lấy ra được nước đi làm cho bàn cờ có điểm cao nhất
         sorted_moves = []
-        possible_moves = board.get_possible_moves()
+        possible_moves = board.get_possible_moves('black')
         copy_board = copy.deepcopy(board)
         for move in possible_moves:
             piece = move.initial.piece
@@ -94,21 +93,21 @@ class chessAI:
             return STALEMATE
         return self.score_board(board)
     
-    def threaded_search(self, possible_moves, depth):
+    # def threaded_search(self, possible_moves, depth):
 
-        #Cho chạy ngắt theo quy định(ví dụ 30 giây cho nghỉ, 1000 bước tìm kiếm cho dừng)
-        pass
+    #     #Cho chạy ngắt theo quy định(ví dụ 30 giây cho nghỉ, 1000 bước tìm kiếm cho dừng)
+    #     pass
 
     def set_search_depth(self, depth):
         self.depth = depth
 
-    def log_decision_making(self, possible_moves, score):
-        #
+    # def log_decision_making(self, possible_moves, score):
+    #     #
 
-        pass
+    #     pass
     
     def find_move_minimax_alpha_beta(self, board, depth, alpha, beta, maximizing):
-        possible_moves = board.get_possible_moves()
+        possible_moves = board.get_possible_moves('black')
         if depth == 0 or board.check_King_all_board() or board.is_stalemate():
             return None, self.evaluate_position(board)
 
@@ -152,7 +151,7 @@ class chessAI:
         for r in range(ROWS):
             for c in range(COLS):
                 square = board.squares[r][c]
-                if not square.isempty():
+                if not square.piece == None:
                     piece = square.piece
                     if isinstance(piece, Pawn):
                         piece_score += piece.value + (pawn_scores[r][c] if piece.color == 'white' else -pawn_scores[7 - r][c])
@@ -183,3 +182,6 @@ class chessAI:
         best_move, _ = self.find_move_minimax_alpha_beta(board, self.depth, -CHECKMATE, CHECKMATE, True)
         return best_move
     
+    def find_random_move(self, board):
+        possible_moves = board.get_possible_moves('black')
+        return random.choice(possible_moves)

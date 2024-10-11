@@ -291,13 +291,14 @@ class Board:
         # king
         self.squares[row_other][4] = Square(row_other, 4, King(color))
     
-    def get_possible_moves(self):
+    def get_possible_moves(self, color):
         possible_moves = []
         for row in range(ROWS):
             for col in range(COLS):
-                if self.squares[row][col].isempty() == False:
+                if self.squares[row][col].piece != None and self.squares[row][col].piece.color == color :
                     possible_moves.extend(self.squares[row][col].piece.moves)
         return possible_moves
+    
     def check_King_all_board(self):
         for row in range(ROWS):
             for col in range(COLS):
@@ -311,7 +312,7 @@ class Board:
     def is_stalemate(self):
         if self.check_King_all_board() == True:
             return False
-        if self.get_possible_moves() == []:
+        if self.get_possible_moves('white') == [] or self.get_possible_moves('black') == []:
             return True
     def is_endgame(self):
         white_pieces = 0
@@ -327,3 +328,5 @@ class Board:
             return white_pieces, black_pieces, True
         else:
             return white_pieces, black_pieces, False
+    
+    
