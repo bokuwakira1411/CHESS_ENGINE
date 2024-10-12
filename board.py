@@ -13,11 +13,11 @@ class Board:
         self._add_pieces('white')
         self._add_pieces('black')
     
-    def undo_move(self, board, move):
+    def undo_move(self, move):
         initial = move.initial
         final = move.final
-        init_piece = initial.piece
-        board.move(init_piece, final)
+        new_move = Move(final, initial)
+        self.move(self.squares[final.row][final.col].piece, new_move)
 
     def calc_moves(self, piece, row, col, bool = True):
         def pawn_moves():
@@ -33,9 +33,7 @@ class Board:
             for possible_move_row in range(start, end, piece.dir):
                 if Square.in_range(possible_move_row):
                     if self.squares[possible_move_row][col].isempty():
-                        
                         initial = Square(row, col)
-                        
                         final =  Square(possible_move_row, col)
                         move =  Move(initial, final)
                         initial_piece = self.squares[row][col].piece
@@ -237,7 +235,7 @@ class Board:
                     p = t_board.squares[r][c].piece
                     t_board.calc_moves(p, r, c, bool = False)
                     for m in p.moves:
-                        if isinstance(m.final.piece, King):
+                        if isinstance(self.squares[m.final.row][m.final.col].piece, King):
                             return True
         return False
 
@@ -297,7 +295,7 @@ class Board:
         possible_moves = []
         for row in range(ROWS):
             for col in range(COLS):
-                if self.squares[row][col].piece != None and self.squares[row][col].piece.color == 'black' :
+                if self.squares[row][col].piece != None and self.squares[row][col].piece.color == color :
                     self.calc_moves(self.squares[row][col].piece, row, col)
                     possible_moves.extend(self.squares[row][col].piece.moves)
         if not possible_moves:

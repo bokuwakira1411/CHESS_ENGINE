@@ -74,22 +74,6 @@ class Main:
                             
     
                     dragger.undrag()
-                         
-                    # if game.next_player == "black":
-                    #     best_move = game.ai.find_best_move(board)
-                    #     if best_move is not None:
-                    #         print(best_move)
-                    #         board.move(best_move.initial.piece, best_move)
-                    #         game.AI_move()
-                    #         game.next_turn()  # Chuyển lượt sau khi AI thực hiện nước đi
-                    #     else: print("No move")
-                    #         best_move = game.ai.findRandomMove(board)
-                    #         board.move(best_move.initial.piece, best_move)
-                    #         game.AI_move()
-                    #         game.show_bg(screen)
-                    #         game.show_last_move(screen)
-                    #         game.show_pieces(screen)
-                    #         game.next_turn()
                 
                 if event.type == pygame.QUIT:
                     pygame.quit()
