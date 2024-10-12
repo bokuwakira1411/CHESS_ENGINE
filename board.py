@@ -33,7 +33,9 @@ class Board:
             for possible_move_row in range(start, end, piece.dir):
                 if Square.in_range(possible_move_row):
                     if self.squares[possible_move_row][col].isempty():
+                        
                         initial = Square(row, col)
+                        
                         final =  Square(possible_move_row, col)
                         move =  Move(initial, final)
                         initial_piece = self.squares[row][col].piece
@@ -295,8 +297,11 @@ class Board:
         possible_moves = []
         for row in range(ROWS):
             for col in range(COLS):
-                if self.squares[row][col].piece != None and self.squares[row][col].piece.color == color :
+                if self.squares[row][col].piece != None and self.squares[row][col].piece.color == 'black' :
+                    self.calc_moves(self.squares[row][col].piece, row, col)
                     possible_moves.extend(self.squares[row][col].piece.moves)
+        if not possible_moves:
+            print('none')
         return possible_moves
     
     def check_King_all_board(self):

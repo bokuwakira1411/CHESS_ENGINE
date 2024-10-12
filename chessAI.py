@@ -3,6 +3,7 @@ from square import Square
 from piece import *
 from move import Move
 import random
+import time
 import copy
 knight_scores = [[0.0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0.0],
                  [0.1, 0.3, 0.5, 0.5, 0.5, 0.5, 0.3, 0.1],
@@ -55,21 +56,21 @@ class chessAI:
         self.next_player = next_player
         self.depth = 3
 
-    def threatened_move(self, game_state, move):
-        initial = move.initial
-        init_piece = initial.piece
-        final = move.final
-        game_state.move(init_piece, move)
-        for row in range(ROWS):
-            for col in range(COLS):
-                    if game_state.squares[row][col].has_rival_piece(init_piece.colo):
-                        rival_piece = game_state.squares[row][col]
-                        rival_moves = game_state.calc_moves(rival_piece, row, col)
-                        if any(pos_move.final == final for pos_move in rival_moves):
-                                game_state.undo_move(initial.piece, move)  
-                                return True
-        game_state.undo_move(init_piece, move)  
-        return False
+    # def threatened_move(self, game_state, move):
+    #     initial = move.initial
+    #     init_piece = initial.piece
+    #     final = move.final
+    #     game_state.move(init_piece, move)
+    #     for row in range(ROWS):
+    #         for col in range(COLS):
+    #                 if game_state.squares[row][col].has_rival_piece(init_piece.colo):
+    #                     rival_piece = game_state.squares[row][col]
+    #                     rival_moves = game_state.calc_moves(rival_piece, row, col)
+    #                     if any(pos_move.final == final for pos_move in rival_moves):
+    #                             game_state.undo_move(initial.piece, move)  
+    #                             return True
+    #     game_state.undo_move(init_piece, move)  
+    #     return False
 
     def order_moves(self, board):
         # Với mỗi tập nước đi có thể xảy ra, sắp xếp các nước đi lại - để mỗi lần lấy ra được nước đi làm cho bàn cờ có điểm cao nhất
@@ -108,6 +109,8 @@ class chessAI:
     
     def find_move_minimax_alpha_beta(self, board, depth, alpha, beta, maximizing):
         possible_moves = board.get_possible_moves('black')
+        print(len(possible_moves))
+        
         if depth == 0 or board.check_King_all_board() or board.is_stalemate():
             return None, self.evaluate_position(board)
 
@@ -115,7 +118,7 @@ class chessAI:
         if maximizing:
             max_eval = -CHECKMATE
             for move in possible_moves:
-                if not self.threatened_move(board, move):
+                # if not self.threatened_move(board, move):
                     copy_board = copy.deepcopy(board)
                     init_piece = move.initial.piece
                     if init_piece != None:
@@ -124,20 +127,22 @@ class chessAI:
                         if curr_eval > max_eval:
                             max_eval = curr_eval
                             best_move = move
+                            print(best_move)
                         alpha = max(alpha, curr_eval)
                         if beta <= alpha:
                             break
-                return best_move, max_eval
+            return best_move, max_eval
         else:
             min_eval = CHECKMATE
             for move in possible_moves:
-                if not self.threatened_move(board, move) and move.initial.piece != None:
+                # if not self.threatened_move(board, move) and move.initial.piece != None:
                     copy_board = copy.deepcopy(board)
                     copy_board.move(move.initial.piece, move)
                     _, curr_eval = self.find_move_minimax_alpha_beta(copy_board,depth - 1, alpha, beta, True)
                     if curr_eval < min_eval:
                         min_eval = curr_eval
                         best_move = move
+                        print(best_move)
                     beta = min(beta, curr_eval)
                     if beta <= alpha:
                         break
@@ -185,3 +190,11 @@ class chessAI:
     def find_random_move(self, board):
         possible_moves = board.get_possible_moves('black')
         return random.choice(possible_moves)
+    def find_best_move(self, board):
+        start_time = 0
+        best_move = self.find_random_move(board)
+        # Tăng dần độ sâu tìm kiếm
+        if time.time() - start_time < 30: # Kiểm tra xem đã vượt quá 30 giây chưa
+            best_move, _ = self.find_move_minimax_alpha_beta(board, self.depth, -CHECKMATE, CHECKMATE, True)
+        else:
+            return best_move
