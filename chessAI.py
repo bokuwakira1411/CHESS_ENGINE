@@ -5,6 +5,7 @@ from move import Move
 import random
 import time
 import copy
+import threading
 knight_scores = [[0.0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0.0],
                  [0.1, 0.3, 0.5, 0.5, 0.5, 0.5, 0.3, 0.1],
                  [0.2, 0.5, 0.6, 0.65, 0.65, 0.6, 0.5, 0.2],
@@ -55,6 +56,8 @@ class chessAI:
     def __init__(self, next_player):
         self.next_player = next_player
         self.depth = 3
+        self.best_move = None
+        self.searching = True
         self.visited_states = {}
         self.evaluated_positions = {} 
 
@@ -157,10 +160,10 @@ class chessAI:
 
         return piece_score
 
-    def find_best_move(self, board):
-        """Find the best move using the minimax algorithm with alpha-beta pruning."""
-        best_move, _ = self.find_move_minimax_alpha_beta(board, self.depth, -CHECKMATE, CHECKMATE, True)
-        return best_move
+    # def find_best_move(self, board):
+    #     """Find the best move using the minimax algorithm with alpha-beta pruning."""
+    #     best_move, _ = self.find_move_minimax_alpha_beta(board, self.depth, -CHECKMATE, CHECKMATE, True)
+    #     return best_move
     
     def find_random_move(self, board):
         possible_moves = board.get_possible_moves('black')
@@ -287,3 +290,24 @@ class chessAI:
                         
         game_state.undo_move(move)  
         return False
+    def find_best_move(self, board):
+        self.best_move = self.find_random_move(board)  # Bắt đầu với nước đi ngẫu nhiên
+        self.searching = True
+        
+        # Tạo một luồng để thực hiện tìm kiếm
+        search_thread = threading.Thread(target=self.search_moves, args=(board,))
+        search_thread.start()
+
+        # Đợi 30 giây
+        search_thread.join(timeout=30)
+
+        # Dừng tìm kiếm
+        self.searching = False
+
+        print(f"Best move found: {self.best_move}")  # Thông báo nước đi được tìm thấy
+        return self.best_move
+
+    def search_moves(self, board):
+        best_move, _ = self.find_move_minimax_alpha_beta(board, self.depth, -CHECKMATE, CHECKMATE, False)
+        if self.searching:  # Kiểm tra xem có còn đang tìm kiếm không
+            self.best_move = best_move
