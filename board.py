@@ -101,7 +101,7 @@ class Board:
                         move = Move(initial, final)
                         if self.squares[move_row][move_col].has_team_piece(piece.color):
                             break 
-                        elif bool and final_piece != None:
+                        elif bool:
                             if not self.check_King(final_piece, move):
                                 piece.add_move(move)
                         else:
@@ -306,7 +306,7 @@ class Board:
         for col in range(COLS):
             self.squares[row_pawn][col] = Square(row_pawn,col, Pawn(color))
         #knights
-        self.squares[4][2] = Square(4, 2, Bishop('white'))
+       
         self.squares[row_other][1] = Square(row_other, 1, Knight(color))
         self.squares[row_other][6] = Square(row_other, 6, Knight(color))
         #bishops

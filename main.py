@@ -10,6 +10,7 @@ class Main:
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("CHESS")
         self.game = Game()
+        
 
     def mainloop(self):
         game = self.game
@@ -17,7 +18,7 @@ class Main:
         board = self.game.board
         dragger = self.game.dragger
 
-        while not board.is_game_over():
+        while True:
             game.show_bg(screen)
             game.show_last_move(screen)
             game.show_moves(screen)
@@ -75,10 +76,10 @@ class Main:
     
                     dragger.undrag()
                 
-                if event.type == pygame.QUIT:
+                if event.type == pygame.QUIT :
                     pygame.quit()
                     sys.exit()
-            
+                
             pygame.display.update()
 
 main = Main()
