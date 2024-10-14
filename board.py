@@ -13,6 +13,7 @@ class Board:
         self._add_pieces('white')
         self._add_pieces('black')
         self.check_king_piece = None
+        self.check_king_move = None
         
     def undo_move(self, move):
         initial = move.initial
@@ -47,13 +48,13 @@ class Board:
                             if self.squares[d_row][col].has_team_piece(initial_piece.color) or self.squares[d_row][col].has_rival_piece(initial_piece.color):
                                 break
                         # check potencial checks
-                            elif bool:
-                                if not self.check_King(piece, move):
-                                    # append new move
-                                    piece.add_move(move)
+                            if bool:
+                                    if not self.check_King(piece, move):
+                                        # append new move
+                                        piece.add_move(move)
                             else:
-                                    # append new move
-                                    piece.add_move(move)
+                                        # append new move
+                                        piece.add_move(move)
                     # blocked
                     else: break
                 # not in range
@@ -91,18 +92,23 @@ class Board:
             for move in possible_moves:
                 move_row, move_col = move
                 if Square.in_range(move_row, move_col):
-                    if self.squares[move_row][move_col].isempty or self.squares[move_row][move_col].has_rival_piece(piece.color) and not self.squares[row][col].has_team_piece(piece.color):
+                    if self.squares[move_row][move_col].isempty() or self.squares[move_row][move_col].has_rival_piece(piece.color):
                         
                         initial = Square(row, col)
-                        final_piece = self.squares[move_row][move_col].piece
+                        final_piece = self.squares[row][col].piece
                         final = Square(move_row, move_col, final_piece)
                         
                         move = Move(initial, final)
-                        if bool and final_piece != None:
+                        if self.squares[move_row][move_col].has_team_piece(piece.color):
+                            break 
+                        elif bool and final_piece != None:
                             if not self.check_King(final_piece, move):
                                 piece.add_move(move)
                         else:
                                 piece.add_move(move)
+                    else:
+                        break
+                
         def king_moves():
             possible_moves = [
                 (row-1, col),
@@ -186,20 +192,23 @@ class Board:
                 while True:
                     if Square.in_range(possible_move_row, possible_move_col):                    
                         initial = Square(row, col)
-                        final_piece = self.squares[possible_move_row][possible_move_col].piece
+                        final_piece = self.squares[row][col].piece
                         final = Square(possible_move_row, possible_move_col, final_piece)
                         move = Move(initial, final)
-                        
-                        if self.squares[possible_move_row][possible_move_col].isempty():
-                            piece.add_move(move)
+                        if self.squares[possible_move_row][possible_move_col].has_team_piece(piece.color):
+                            break
+                        elif self.squares[possible_move_row][possible_move_col].isempty():
+                            if bool:
+                                if not self.check_King(final_piece, move):
+                                    piece.add_move(move)
+                            else:
+                                    piece.add_move(move)
                         elif self.squares[possible_move_row][possible_move_col].has_rival_piece(piece.color):
                             if bool:
                                 if not self.check_King(final_piece, move):
                                     piece.add_move(move)
                             else:
                                     piece.add_move(move)
-                            break
-                        elif self.squares[possible_move_row][possible_move_col].has_team_piece(piece.color):
                             break
                     else: break
                     possible_move_row = possible_move_row + row_incr
@@ -246,11 +255,13 @@ class Board:
         t_board.move(t_piece, move)
         for r in range(ROWS):
             for c in range(COLS):
-                if(t_board.squares[r][c].has_rival_piece(t_piece.color)):
+                if t_board.squares[r][c].has_rival_piece(t_piece.color):
                     p = t_board.squares[r][c].piece
+                    p.moves = p.clear_moves()
                     t_board.calc_moves(p, r, c, bool = False)
                     for m in p.moves:
-                        if isinstance(self.squares[m.final.row][m.final.col].piece, King):
+                        if isinstance(self.squares[m.final.row][m.final.col].piece, King) and self.squares[m.initial.row][m.initial.col].piece.color == 'white':
+                            self.check_king_piece = self.squares[m.initial.row][m.initial.col].piece
                             return True
         return False
 
@@ -295,6 +306,7 @@ class Board:
         for col in range(COLS):
             self.squares[row_pawn][col] = Square(row_pawn,col, Pawn(color))
         #knights
+        self.squares[4][2] = Square(4, 2, Bishop('white'))
         self.squares[row_other][1] = Square(row_other, 1, Knight(color))
         self.squares[row_other][6] = Square(row_other, 6, Knight(color))
         #bishops
@@ -319,15 +331,19 @@ class Board:
             print('none')
         return possible_moves
     
+
     def check_King_all_board(self):
         for row in range(ROWS):
             for col in range(COLS):
-                if  not self.squares[row][col].isempty():
+                if not self.squares[row][col].isempty():
                     cur_piece = self.squares[row][col].piece
                     for move in cur_piece.moves:
-                        if self.check_King(cur_piece, move):
-                            self.check_king_piece = cur_piece
-                            return True
+                        fi_piece = self.squares[move.final.row][move.final.col].piece
+                        if  fi_piece is not None and fi_piece.name == 'King' and fi_piece.color != cur_piece.color:
+                            print('fi_piece')
+                            self.check_king_piece = fi_piece
+                            self.check_king_move = move
+            print('No piece')
         return False
 
     def is_stalemate(self):
@@ -350,5 +366,25 @@ class Board:
             return white_pieces, black_pieces, True
         else:
             return white_pieces, black_pieces, False
-    
-    
+    def is_game_over(self):
+        white_king_present = False
+        black_king_present = False
+
+        for r in range(ROWS):
+            for c in range(COLS):
+                piece = self.squares[r][c].piece
+                if isinstance(piece, King):
+                    if piece.color == 'white':
+                        white_king_present = True
+                    elif piece.color == 'black':
+                        black_king_present = True
+
+    # Kiểm tra xem có vua trắng và vua đen trên bàn cờ
+        if not white_king_present:
+            print("AI wins!")
+            return True  # Trò chơi kết thúc nếu không còn vua trắng
+        elif not black_king_present:
+            print("Player wins!")
+            return True  # Trò chơi kết thúc nếu không còn vua đen
+
+        return False  # Trò chơi vẫn tiếp tục

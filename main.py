@@ -17,7 +17,7 @@ class Main:
         board = self.game.board
         dragger = self.game.dragger
 
-        while True:
+        while not board.is_game_over():
             game.show_bg(screen)
             game.show_last_move(screen)
             game.show_moves(screen)

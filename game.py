@@ -67,3 +67,4 @@ class Game:
 
             # # Thực hiện nước đi
             self.board.move(self.board.squares[best_move.initial.row][best_move.initial.col].piece, best_move)
+    
