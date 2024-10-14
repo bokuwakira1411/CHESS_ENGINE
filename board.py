@@ -20,53 +20,43 @@ class Board:
         final = move.final
         piece = self.squares[final.row][final.col].piece
 
-        # Khôi phục quân cờ về ô ban đầu
         self.squares[initial.row][initial.col].piece = piece
         self.squares[final.row][final.col].piece = None
 
-        # Thiết lập lại trạng thái di chuyển của quân cờ
-        piece.moved = False # Hoặc bạn có thể lưu trữ nước đi trước đó nếu cầ
+        piece.moved = False 
     def calc_moves(self, piece, row, col, bool = True):
         
         def pawn_moves():
-            # steps
-            steps = 1 if piece.moved else 2
 
-            # vertical moves
+            steps = 1 if piece.moved else 2
             start = row + piece.dir
             end = row + (piece.dir * (1 + steps))
             for possible_move_row in range(start, end, piece.dir):
                 if Square.in_range(possible_move_row):
                     if self.squares[possible_move_row][col].isempty():
-                        # create initial and final move squares
                         initial = Square(row, col)
                         final = Square(possible_move_row, col)
-                        # create a new move
                         move = Move(initial, final)
                         initial_piece = self.squares[row][col].piece
-                        for d_row in range(row + piece.dir, possible_move_row + piece.dir, piece.dir):
+                        for d_row in range(row + piece.dir, possible_move_row + 2*piece.dir, piece.dir):
                             if self.squares[d_row][col].has_team_piece(initial_piece.color) or self.squares[d_row][col].has_rival_piece(initial_piece.color):
                                 break
-                        # check potencial checks
                             if bool:
                                     if not self.check_King(piece, move):
-                                        # append new move
+                                        
                                         piece.add_move(move)
                             else:
-                                        # append new move
+                                        
                                         piece.add_move(move)
-                    # blocked
+                
                     else: break
-                # not in range
                 else: break
 
-            # diagonal moves
             possible_move_row = row + piece.dir
             possible_move_cols = [col-1, col+1]
             for possible_move_col in possible_move_cols:
                 if Square.in_range(possible_move_row, possible_move_col):
                     if self.squares[possible_move_row][possible_move_col].has_rival_piece(piece.color):
-                        # create initial and final move squares
                         initial = Square(row, col)
                         final_piece = self.squares[possible_move_row][possible_move_col].piece
                         final = Square(possible_move_row, possible_move_col, final_piece)
@@ -78,36 +68,30 @@ class Board:
                         else:
                             piece.add_move(move)
         def knight_moves():
-            # 8 possible moves
             possible_moves = [
-                (row-2, col+1),
-                (row-1, col+2),
-                (row+1, col+2),
-                (row+2, col+1),
-                (row+2, col-1),
-                (row+1, col-2),
-                (row-1, col-2),
-                (row-2, col-1),
+                (row - 2, col + 1),
+                (row - 1, col + 2),
+                (row + 1, col + 2),
+                (row + 2, col + 1),
+                (row + 2, col - 1),
+                (row + 1, col - 2),
+                (row - 1, col - 2),
+                (row - 2, col - 1),
             ]
             for move in possible_moves:
                 move_row, move_col = move
                 if Square.in_range(move_row, move_col):
-                    if self.squares[move_row][move_col].isempty() or self.squares[move_row][move_col].has_rival_piece(piece.color):
-                        
-                        initial = Square(row, col)
-                        final_piece = self.squares[row][col].piece
-                        final = Square(move_row, move_col, final_piece)
-                        
-                        move = Move(initial, final)
-                        if self.squares[move_row][move_col].has_team_piece(piece.color):
-                            break 
-                        elif bool:
-                            if not self.check_King(final_piece, move):
+                    initial = Square(row, col)
+                    initial_piece = self.squares[row][col].piece
+                    final = Square(move_row, move_col)
+                    move = Move(initial, final)
+                    if self.squares[move_row][move_col].isempty() or self.squares[move_row][move_col].has_rival_piece(piece.color):  
+                        if bool:
+                            if not self.check_King(initial_piece, move):
                                 piece.add_move(move)
                         else:
                                 piece.add_move(move)
-                    else:
-                        break
+
                 
         def king_moves():
             possible_moves = [
@@ -222,29 +206,29 @@ class Board:
             knight_moves()
         elif isinstance(piece, Bishop):
             straight_line_moves([
-                (-1,1), #up_right
-                (-1,-1), #up_left
-                (1,1) ,# down_right
-                (1,-1) # down_left
+                (-1,1),
+                (-1,-1), 
+                (1,1) ,
+                (1,-1) 
             ])
         elif isinstance(piece, Rook):
             straight_line_moves([
-                (-1,0), #up
-                (0,-1), # left
-                (1,0), #down
-                (0,1), #right
+                (-1,0), 
+                (0,-1), 
+                (1,0), 
+                (0,1), 
                 
             ])
         elif isinstance(piece, Queen):
             straight_line_moves([
-                (-1,1), #up_right
-                (-1,-1), #up_left
-                (1,1), # down_right
-                (1,-1), # down_left
-                (-1,0), #up
-                (0,-1), # left
-                (1,0), #down
-                (0,1) #right
+                (-1,1), 
+                (-1,-1),
+                (1,1), 
+                (1,-1),
+                (-1,0), 
+                (0,-1), 
+                (1,0), 
+                (0,1) 
             ])
         elif isinstance(piece, King):
             king_moves()
@@ -331,7 +315,6 @@ class Board:
             print('none')
         return possible_moves
     def check_King_all_board(self):
-        """Kiểm tra xem có quân vua nào đang bị chiếu không."""
         for row in range(ROWS):
             for col in range(COLS):
                 if not self.squares[row][col].isempty():

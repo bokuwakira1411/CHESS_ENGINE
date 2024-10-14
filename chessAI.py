@@ -55,7 +55,7 @@ STALEMATE = 0
 class chessAI:
     def __init__(self, next_player):
         self.next_player = next_player
-        self.depth = 3
+        self.depth = 2
         self.best_move = None
         self.searching = True
         self.visited_states = {}
@@ -65,6 +65,25 @@ class chessAI:
         self.bk_row = None
         self.bk_col = None
     
+    def order_moves(self, board, color):
+        possible_moves = board.get_possible_moves(color)  # Hoặc 'black', tùy thuộc vào bên nào đang chơi
+        ordered_moves = []
+
+        for move in possible_moves:
+            
+            temp_board = copy.deepcopy(board)
+            piece = temp_board.squares[move.initial.row][move.initial.col].piece
+            temp_board.move(piece, move)
+
+            score = self.score_board(temp_board)
+            ordered_moves.append((move, score))
+            temp_board.undo_move(move)
+        if color == 'white':
+            ordered_moves.sort(key=lambda x: x[1], reverse=True)
+        else:
+            ordered_moves.sort(key=lambda x: x[1])
+        return [move for move, score in ordered_moves]
+
     def score_board(self, board):
         piece_score = 0
 
@@ -155,12 +174,10 @@ class chessAI:
         best_move = None
         if depth == 0 or board.is_stalemate():
             return best_move, self.score_board(board)
-        best_move = None
         
         if maximizing:
                 
-                possible_moves = board.get_possible_moves('white')
-                random.shuffle(possible_moves)
+                possible_moves = self.order_moves(board, 'white')
                 max_eval = -CHECKMATE
 
                 for move in possible_moves:
@@ -184,8 +201,7 @@ class chessAI:
                             break  # Cắt tỉa
 
         else:
-                possible_moves = board.get_possible_moves('black')
-                random.shuffle(possible_moves)
+                possible_moves = self.order_moves(board, 'black')
                 min_eval = CHECKMATE
 
                 for move in possible_moves:
@@ -193,12 +209,10 @@ class chessAI:
                         copy_board = copy.deepcopy(board)
                         init_piece = copy_board.squares[move.initial.row][move.initial.col].piece
                         copy_board.move(init_piece, move)
-
-                        # Gọi hàm score_board để tính điểm cho trạng thái mới
                         _, curr_eval = self.find_move_minimax_alpha_beta(copy_board, depth - 1, alpha, beta, True)
 
                         if curr_eval is None:
-                            continue  # Bỏ qua nếu không có giá trị đánh giá hợp lệ
+                            continue  
 
                         if curr_eval < min_eval:
                             min_eval = curr_eval
@@ -216,24 +230,22 @@ class chessAI:
             copy_board = copy.deepcopy(game_state)
             for move in possible_moves:
                 cur_piece = copy_board.squares[move.initial.row][move.initial.col].piece
-                cur_piece.moves = cur_piece.clear_moves()
-                copy_board.calc_moves(cur_piece, move.initial.row, move.initial.col)
                 copy_board.move(cur_piece, move)
                 if not self.is_king_in_check(copy_board, cur_piece.color):
                     return move
+                else:
+                    copy_board.undo_move(move)
         return None          
     
     def find_best_move(self, board):
         
         self.best_move = self.find_random_move(board)  # Bắt đầu với nước đi ngẫu nhiên
         self.searching = True
-            
         search_thread = threading.Thread(target=self.search_moves, args=(board,))
         search_thread.start()
-        search_thread.join(timeout=30)
+        search_thread.join(timeout=20)
         self.searching = False
-
-        self.searching = False 
+        time.sleep(10)
         print(f"Best move found: {self.best_move}")  
         if board.is_game_over():
                 None # Thông báo nước đi được tìm thấy
