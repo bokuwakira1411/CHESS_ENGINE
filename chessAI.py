@@ -64,143 +64,114 @@ class chessAI:
         self.wk_col = None
         self.bk_row = None
         self.bk_col = None
-    def get_board_hash(self, board):
-        return hash(str(board))
-
-    def order_moves(self, board):
-        
-        sorted_moves = []
-        possible_moves = board.get_possible_moves('black')
-        print(len(possible_moves))
-        copy_board = copy.deepcopy(board)
-        for move in possible_moves:
-            piece = copy_board.squares[move.initial.row][move.initial.col].piece
-            if piece != None:
-                copy_board.move(piece, move)
-                print(copy_board.squares[move.final.row][move.final.col].piece.name)
-                score = self.score_board(copy_board)
-                print(score)
-                if copy_board.squares[move.final.row][move.final.col].has_rival_piece('black'):
-                    score = score - 2*board.squares[move.final.row][move.final.col].piece.value
-                sorted_moves.append((move, score))
-                copy_board.undo_move(move)
-                print(copy_board.squares[move.initial.row][move.initial.col].piece.name)
-        sorted_moves.sort(key=lambda x: x[1])
-        for move, score in sorted_moves:
-            print(score)
-        return [move for move, score in sorted_moves]
-
-    def set_search_depth(self, depth):
-        self.depth = depth
-
-    # def log_decision_making(self, possible_moves, score):
-    #     #
-
-    #     pass
     
     def score_board(self, board):
-        """Calculate the score of the board state."""
         piece_score = 0
 
+        if self.is_king_in_check(board, 'black'):
+            return +CHECKMATE  
+        elif self.is_king_in_check(board, 'white'):
+            return -CHECKMATE
         for r in range(ROWS):
-            for c in range(COLS):
-                square = board.squares[r][c]
-                if square.piece is not None:  # Sử dụng is not None
+                for c in range(COLS):
+                    square = board.squares[r][c]
                     piece = square.piece
 
-                    if piece.color == 'white':
-                        # Tính điểm cho quân trắng
-                        if isinstance(piece, Pawn):
-                            piece_score += piece.value + pawn_scores[r][c]
-                        elif isinstance(piece, Rook):
-                            piece_score += piece.value + rook_scores[r][c]
-                        elif isinstance(piece, Bishop):
-                            piece_score += piece.value + bishop_scores[r][c]
-                        elif isinstance(piece, Queen):
-                            piece_score += piece.value + queen_scores[r][c]
-                        elif isinstance(piece, King):
-                            piece_score += piece.value
-                            self.wk_row, self.wk_col = r, c  # Lưu vị trí vua trắng
+                    if piece is not None:
+                        if piece.color == 'white':
+                            piece_score += self.calculate_piece_score(piece, r, c)
+                            print(piece_score)
+                            if isinstance(piece, King):
+                                self.wk_row, self.wk_col = r, c  # Lưu vị trí vua trắng
+                        else:
+                            piece_score += self.calculate_defensive_priority_score(board, piece, r, c)
+                            print(piece_score)
+                            if isinstance(piece, King):
+                                self.bk_row, self.bk_col = r, c  # Lưu vị trí vua đen
 
-                    else:
-                        # Tính điểm cho quân đen (trừ điểm, nên nó sẽ âm)
-                        if isinstance(piece, Pawn):
-                            piece_score += piece.value - pawn_scores[7 - r][c]
-                        elif isinstance(piece, Rook):
-                            piece_score += piece.value - rook_scores[7 - r][c]
-                        elif isinstance(piece, Bishop):
-                            piece_score += piece.value - bishop_scores[7 - r][c]
-                        elif isinstance(piece, Queen):
-                            piece_score += piece.value - queen_scores[7 - r][c]
-                        elif isinstance(piece, King):
-                            piece_score += piece.value 
-                            self.bk_row, self.bk_col = r, c  # Lưu vị trí vua đen
-
-                    # Trừ điểm cho quân cờ đen nếu có thể bắt quân trắng
-                    if square.has_rival_piece('black'):
-                        captured_piece = square.piece
-                        if captured_piece.color != 'white':
-                            piece_score += captured_piece.value  # Trừ điểm cho quân bị bắt
-        print(piece_score)
-        # Điều chỉnh cho giai đoạn kết thúc
-        white_pieces, black_pieces, endgame_phase = board.is_endgame()
-        if endgame_phase:
-            min_dist = min(abs(self.wk_row - 0), abs(self.wk_row - 7), abs(self.wk_col - 0), abs(self.wk_col - 7))
-            piece_score += min_dist * 0.1  # Thêm khoảng cách tới góc
-            if white_pieces <= 7:
-                piece_score -= 50  # Trừ điểm nếu quân trắng ít
-            if black_pieces <= 7:
-                piece_score += 50  # Thêm điểm nếu quân đen ít
+            # piece_score += self.endgame_adjustments(board)
 
         return piece_score
+    def calculate_defensive_priority_score(self, board, piece, row, col):
+        max_threatening_capture_score = 0
+        best_capture_score = 0
+        
+        # Lấy tất cả các nước đi của quân trắng
+        for move in board.get_possible_moves('white'):
+            target_square = board.squares[move.final.row][move.final.col]
+            if target_square.has_rival_piece('white'):
+                threatened_piece = target_square.piece
+                max_threatening_capture_score = max(max_threatening_capture_score, threatened_piece.value)
 
+        # Lấy tất cả các nước đi của quân đen
+        for move in piece.moves:
+            target_square = board.squares[move.final.row][move.final.col]
+            if target_square.has_rival_piece('black'):
+                captured_piece = target_square.piece
+                best_capture_score = max(best_capture_score, captured_piece.value)
+
+        # Đánh giá nguy cơ bị tấn công
+        if max_threatening_capture_score > best_capture_score:
+            return max_threatening_capture_score  # Trả về giá trị âm nếu bị đe dọa nhiều hơn
+        
+        return self.calculate_piece_score(piece, row, col) - best_capture_score
+    def calculate_piece_score(self, piece, row, col):
+        
+        if isinstance(piece, Pawn):
+            return piece.value + (pawn_scores[row][col] if piece.color == 'white' else -pawn_scores[row][col])
+        elif isinstance(piece, Rook):
+            return piece.value + (rook_scores[row][col] if piece.color == 'white' else -rook_scores[row][col])
+        elif isinstance(piece, Bishop):
+            return piece.value + (bishop_scores[row][col] if piece.color == 'white' else -bishop_scores[row][col])
+        elif isinstance(piece, Queen):
+            return piece.value + (queen_scores[row][col] if piece.color == 'white' else -queen_scores[row][col])
+        elif isinstance(piece, King):
+            return piece.value  # Không điều chỉnh điểm cho vua
+
+        return 0  # Trả về 0 nếu không phải quân cờ hợp lệ
+
+    def endgame_adjustments(self, board):
+        
+        score_adjustment = 0
+        white_pieces, black_pieces, endgame_phase = board.is_endgame()
+
+        if endgame_phase:
+            # Tính khoảng cách tới góc cho vua trắng
+            min_dist = min(abs(self.wk_row - 0), abs(self.wk_row - 7), abs(self.wk_col - 0), abs(self.wk_col - 7))
+            score_adjustment += min_dist * 0.1  # Thêm khoảng cách tới góc
+
+            # Trừ điểm nếu quân trắng ít
+            if white_pieces <= 7:
+                score_adjustment -= 50  # Trừ điểm nếu quân trắng ít
+
+            # Thêm điểm nếu quân đen ít
+            if black_pieces <= 7:
+                score_adjustment += 50  # Thêm điểm nếu quân đen ít
+
+        return score_adjustment
+        
     def find_random_move(self, board):
         possible_moves = board.get_possible_moves('black')
         return random.choice(possible_moves)
-   
     def find_move_minimax_alpha_beta(self, board, depth, alpha, beta, maximizing):
-        board_hash = self.get_board_hash(board)
-
-        if board_hash in self.visited_states:
-            return self.visited_states[board_hash]
-
-        # Nếu độ sâu là 0 hoặc trạng thái kết thúc
-        if depth == 0 or board.is_stalemate() :
-            return None, self.score_board(board)
-
+        best_move = None
+        if depth == 0 or board.is_stalemate():
+            return best_move, self.score_board(board)
         best_move = None
 
-        if board.check_King_all_board():
-                curr_eval = 0
-                pos_moves = self.handle_check(board)
-                print(len(pos_moves))
-                for move in pos_moves:
-                    copy_board = copy.deepcopy(board)
-                    init_piece = copy_board.squares[move.initial.row][move.initial.col].piece
-                    copy_board.move(init_piece, move)
-                    _, curr_eval = self.find_move_minimax_alpha_beta(copy_board, depth - 1, alpha, beta, False)
-                    curr_eval -=10
-                    if curr_eval is None:
-                        continue  # Bỏ qua nếu không có giá trị đánh giá hợp lệ
-
-                    if curr_eval > alpha:
-                        alpha = curr_eval
-                        best_move = move
-
-                    if beta <= alpha:
-                        break  # Cắt tỉa
-
-                self.visited_states[board_hash] = (best_move, curr_eval)
-                return best_move, curr_eval
-
-        # Nếu không ở trong tình huống chiếu
         if maximizing:
+            
+            possible_moves = board.get_possible_moves('white')
+            random.shuffle(possible_moves)
             max_eval = -CHECKMATE
-            for move in self.order_moves(board):
-                if not self.threatened_move(board, move):
+
+            for move in possible_moves:
+                #if not self.threatened_move(board, move):
                     copy_board = copy.deepcopy(board)
                     init_piece = copy_board.squares[move.initial.row][move.initial.col].piece
                     copy_board.move(init_piece, move)
+
+                    # Gọi hàm score_board để tính điểm cho trạng thái mới
                     _, curr_eval = self.find_move_minimax_alpha_beta(copy_board, depth - 1, alpha, beta, False)
 
                     if curr_eval is None:
@@ -214,15 +185,18 @@ class chessAI:
                     if beta <= alpha:
                         break  # Cắt tỉa
 
-                self.visited_states[board_hash] = (best_move, max_eval)
-                return best_move, max_eval
         else:
+            possible_moves = board.get_possible_moves('black')
+            random.shuffle(possible_moves)
             min_eval = CHECKMATE
-            for move in self.order_moves(board):
-                if not self.threatened_move(board, move):
+
+            for move in possible_moves:
+                #if not self.threatened_move(board, move):
                     copy_board = copy.deepcopy(board)
                     init_piece = copy_board.squares[move.initial.row][move.initial.col].piece
                     copy_board.move(init_piece, move)
+
+                    # Gọi hàm score_board để tính điểm cho trạng thái mới
                     _, curr_eval = self.find_move_minimax_alpha_beta(copy_board, depth - 1, alpha, beta, True)
 
                     if curr_eval is None:
@@ -236,9 +210,7 @@ class chessAI:
                     if beta <= alpha:
                         break  # Cắt tỉa
 
-            self.visited_states[board_hash] = (best_move, min_eval)
-            return best_move, min_eval
-
+        return best_move, max_eval if maximizing else min_eval
     def threatened_move(self, game_state, move):
         initial = move.initial
         copy_board = copy.deepcopy(game_state)
@@ -276,45 +248,45 @@ class chessAI:
         if self.searching:  # Kiểm tra xem có còn đang tìm kiếm không
             self.best_move = best_move
  
-    def handle_check(self, board):
-        attacking_piece_moves = self.get_attacking_piece_moves(board)
-        blocking_moves = []
-        print('HANDLE CHECKKKKKKKKKKKKKKKKKKKKKK')
-        # Kiểm tra xem có nước đi nào cho quân đen có thể bắt quân tấn công không
-        for move in board.get_possible_moves('black'):
-            piece = board.squares[move.initial.row][move.initial.col].piece
-            if piece and self.can_capture(board, move):
-                blocking_moves.append(move)
-        for move in attacking_piece_moves:
-            result = self.can_block_check(board, move)
-            if result:
-                blocking_moves.append(result)
+    # def handle_check(self, board):
+    #     attacking_piece_moves = self.get_attacking_piece_moves(board)
+    #     blocking_moves = []
+    #     print('HANDLE CHECKKKKKKKKKKKKKKKKKKKKKK')
+    #     # Kiểm tra xem có nước đi nào cho quân đen có thể bắt quân tấn công không
+    #     for move in board.get_possible_moves('black'):
+    #         piece = board.squares[move.initial.row][move.initial.col].piece
+    #         if piece and self.can_capture(board, move):
+    #             blocking_moves.append(move)
+    #     for move in attacking_piece_moves:
+    #         result = self.can_block_check(board, move)
+    #         if result:
+    #             blocking_moves.append(result)
       
-        if not blocking_moves:
-            if board.check_king_piece.color == 'white':
-                return "Checkmate"  
-        return blocking_moves if blocking_moves else []
+    #     if not blocking_moves:
+    #         if board.check_king_piece.color == 'white':
+    #             return "Checkmate"  
+    #     return blocking_moves if blocking_moves else []
 
-    def get_attacking_piece_moves(self, board):
-        if board.check_king_piece.color == 'white':
-            print(len(board.check_king_piece.moves))
-            return board.check_king_piece.moves
+    # def get_attacking_piece_moves(self, board):
+    #     if board.check_king_piece.color == 'white':
+    #         print(len(board.check_king_piece.moves))
+    #         return board.check_king_piece.moves
 
-        return []
+    #     return []
 
-    def can_block_check(self, board, move):
-        copy_board = copy.deepcopy(board)  # Tạo bản sao của bàn cờ
-        piece = copy_board.squares[move.initial.row][move.initial.col].piece
-        copy_board.move(piece, move)
+    # def can_block_check(self, board, move):
+    #     copy_board = copy.deepcopy(board)  # Tạo bản sao của bàn cờ
+    #     piece = copy_board.squares[move.initial.row][move.initial.col].piece
+    #     copy_board.move(piece, move)
 
-        # Kiểm tra xem vua có còn bị chiếu không
-        if not copy_board.check_King_all_board(): 
-            return move  
-        return None 
+    #     # Kiểm tra xem vua có còn bị chiếu không
+    #     if not copy_board.check_King_all_board(): 
+    #         return move  
+    #     return None 
 
-    def can_capture(self, board, move):
-        target_square = board.squares[move.final.row][move.final.col]
-        return target_square.has_rival_piece('white')
+    # def can_capture(self, board, move):
+    #     target_square = board.squares[move.final.row][move.final.col]
+    #     return target_square.has_rival_piece('white')
     def evaluate_position(self, board):
         score = self.score_board(board)
         for row in range(ROWS):
@@ -322,16 +294,23 @@ class chessAI:
                 square = board.squares[row][col]
                 if not square.isempty():
                     piece = square.piece
-                    if piece.color == 'white':
-                        # Thêm điểm cho các nước đi có thể bắt quân cờ của đối thủ
-                        for move in board.get_possible_moves('white'):
-                            if board.squares[move.final.row][move.final.col].has_rival_piece('white'):
-                                score += board.squares[move.final.row][move.final.col].piece.value
-                    else:
-
+                    if piece.color == 'black':
                         # Thêm điểm cho các nước đi của quân đen có thể bắt quân trắng
                         for move in board.get_possible_moves('black'):
                             if board.squares[move.final.row][move.final.col].has_rival_piece('black'):
                                 score += board.squares[move.final.row][move.final.col].piece.value
         return score
     
+    def is_king_in_check(self, board, color):
+        """Kiểm tra xem vua có bị tấn công không."""
+        king_position = (self.bk_row, self.bk_col) if color == 'black' else (self.wk_row, self.wk_col)
+        for row in range(ROWS):
+            for col in range(COLS):
+                square = board.squares[row][col]
+                if square.has_rival_piece(color):
+                    rival_piece = square.piece
+                    board.calc_moves(rival_piece, row, col)
+                    if king_position in [(move.final.row, move.final.col) for move in board.get_possible_moves(rival_piece.color)]:
+                        return True  # Vua bị tấn công
+
+        return False  # Vua không bị tấn công

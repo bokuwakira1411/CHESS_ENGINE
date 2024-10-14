@@ -330,21 +330,19 @@ class Board:
         if not possible_moves:
             print('none')
         return possible_moves
-    
-
     def check_King_all_board(self):
+        """Kiểm tra xem có quân vua nào đang bị chiếu không."""
         for row in range(ROWS):
             for col in range(COLS):
                 if not self.squares[row][col].isempty():
-                    cur_piece = self.squares[row][col].piece
-                    for move in cur_piece.moves:
-                        fi_piece = self.squares[move.final.row][move.final.col].piece
-                        if  fi_piece is not None and fi_piece.name == 'King' and fi_piece.color != cur_piece.color:
-                            print('fi_piece')
-                            self.check_king_piece = fi_piece
+                    current_piece = self.squares[row][col].piece
+                    for move in current_piece.moves:
+                        final_piece = self.squares[move.final.row][move.final.col].piece
+                        if final_piece is not None and isinstance(final_piece, King) and final_piece.color != current_piece.color:
+                            self.check_king_piece = final_piece
                             self.check_king_move = move
-            print('No piece')
-        return False
+                            return True  # Có quân vua đang bị chiếu
+        return False  # Không có quân vua nào bị chiếu
 
     def is_stalemate(self):
         if self.check_King_all_board() == True:
