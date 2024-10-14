@@ -101,7 +101,7 @@ class chessAI:
             target_square = board.squares[move.final.row][move.final.col]
             if target_square.has_rival_piece('white'):
                 threatened_piece = target_square.piece
-                max_threatening_capture_score = max(max_threatening_capture_score, threatened_piece.value)
+                max_threatening_capture_score = max(max_threatening_capture_score, abs(threatened_piece.value))
 
         # Lấy tất cả các nước đi của quân đen
         for move in piece.moves:
@@ -235,9 +235,9 @@ class chessAI:
         
         search_thread = threading.Thread(target=self.search_moves, args=(board,))
         search_thread.start()
-        search_thread.join(timeout=30)
+        search_thread.join(timeout=10)
         self.searching = False
-        time.sleep(20) 
+        time.sleep(10) 
         print(f"Best move found: {self.best_move}")  
         if board.is_game_over():
             None # Thông báo nước đi được tìm thấy
