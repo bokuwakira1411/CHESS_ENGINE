@@ -60,11 +60,5 @@ class Game:
         best_move = self.ai.find_best_move(self.board)
         print(best_move)
         if best_move:
-            # Tô màu ô có thể di chuyển
-            # color = (230, 230, 0)  # Màu cho nước đi của AI
-            # rect = (best_move.final.col * SQSIZE, best_move.final.row * SQSIZE, SQSIZE, SQSIZE)
-            # pygame.draw.rect(surface, color, rect)  # Tô màu ô nước đi
-
-            # # Thực hiện nước đi
             self.board.move(self.board.squares[best_move.initial.row][best_move.initial.col].piece, best_move)
     
